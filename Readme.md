@@ -1,4 +1,9 @@
-Usage: call passing a resque queue name from redis (just the unique part, it automatically adds the resque:queue: bit).
+# Usage
+
+Call passing one or more resque queue names as arguments (just the unique part,
+it automatically adds the resque:queue: bit).
+
+## Comment
 
 It compares the top of the queue against a saved value and if they are the same
 then the queue isn't getting processes. If the queue is empty or the value from
@@ -9,4 +14,8 @@ tell if the passed in strings are the correct queue names. So double check.
 
 Obviously make sure the queue is processes more frequently than you run this
 script.
+
+## License
+
+MIT licence. See LICENCE file.
 
