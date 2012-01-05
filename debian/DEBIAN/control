@@ -1,0 +1,8 @@
+Package: resque-plugin-nagios
+Version: 1.0-1
+Section: net
+Priority: optional
+Architecture: all
+Depends: redis-server
+Maintainer: John Eikenberry <jae@zhar.net>
+Description: Nagios plugin to monitor a resque queue.
