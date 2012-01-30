@@ -1,5 +1,8 @@
 # Usage
 
+For use with nagios, sensu or some other monitoring software that supports
+external programs.
+
 	$ resque-ok -h
 	Usage: resque-ok [options] QUEUE [...]
 	  -ns="resque": reqsue namespace

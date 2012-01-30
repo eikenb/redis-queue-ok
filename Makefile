@@ -20,25 +20,25 @@ endif
 GC:=${A}g
 LD:=${A}l
 
-all: depend resque-nagios strip
+all: depend resque-ok strip
 
-resque-nagios: resque-nagios.A
-	$(LD) -L ${LPATH} -o resque-nagios resque-nagios.${A}
+resque-ok: resque-ok.A
+	$(LD) -L ${LPATH} -o resque-ok resque-ok.${A}
 
-resque-nagios.A: resque-nagios.go
-	$(GC) -I ${IPATH} resque-nagios.go
+resque-ok.A: resque-ok.go
+	$(GC) -I ${IPATH} resque-ok.go
 
 pop: populate.go
 	$(GC) -I ${IPATH} populate.go
 	$(LD) -L ${LPATH} -o populate populate.${A}
 
 strip:
-	strip resque-nagios
+	strip resque-ok
 
 clean-all: clean clean-depend clean-deb
 
 clean:
-	rm -f *.6 *.8 resque-nagios populate
+	rm -f *.6 *.8 resque-ok populate
 
 depend:
 	mkdir -p ${GOPATH}
@@ -52,12 +52,12 @@ clean-depend:
 
 deb: all
 	mkdir -p ./debian/usr/bin
-	cp resque-nagios ./debian/usr/bin/
+	cp resque-ok ./debian/usr/bin/
 	dpkg-deb --build debian
-	mv debian.deb resque-plugin-nagios-1.0-1.deb
+	mv debian.deb resque-ok-0.2-1.deb
 
 clean-deb:
-	rm -f ./debian/usr/bin/resque-nagios
+	rm -f ./debian/usr/bin/resque-ok
 	test ! -d ./debian/usr/bin || { cd ./debian; rmdir -p ./usr/bin; }
-	rm -f resque-plugin-nagios-1.0-1.deb
+	rm -f resque-ok-0.2-1.deb
 
