@@ -9,7 +9,6 @@ import (
 )
 
 const dataPath = "/var/tmp/%v.txt"
-const resque = "resque:queue:"
 
 func main() {
 	setUsage()
@@ -40,10 +39,13 @@ func main() {
 
 // process arguments as queue names
 func argsAsQueues() []string {
+	// namespace of default 'resque:queue:' is 'resque', resque adds the 'queue'
+	// bit automatically in addition to namespace.
+	var namespace = flag.String("ns", "resque", "reqsue namespace")
 	flag.Parse()
 	queues := make([]string, 0, flag.NArg())
 	for i := 0; i < flag.NArg(); i++ {
-		queues = append(queues, resque+flag.Arg(i))
+		queues = append(queues, *namespace+":queue:"+flag.Arg(i))
 	}
 	return queues
 }
@@ -51,7 +53,8 @@ func argsAsQueues() []string {
 // --help output
 func setUsage() {
 	flag.Usage = func() {
-		fmt.Println("Usage:", os.Args[0], "QUEUE [...]")
+		fmt.Println("Usage:", os.Args[0], "[options] QUEUE [...]")
+		flag.PrintDefaults()
 	}
 }
 

@@ -1,7 +1,12 @@
 # Usage
 
-Call passing one or more resque queue names as arguments (just the unique part,
-it automatically adds the resque:queue: bit).
+	$ resque-ok -h
+	Usage: resque-ok [options] QUEUE [...]
+	  -ns="resque": reqsue namespace
+
+Call passing one or more resque queue names as arguments. It also takes an
+optional namespace argument that should coincide with your
+Resque.redis.namespace setting.
 
 ## Comment
 
@@ -12,8 +17,7 @@ the queue is different than the saved value, all is ok.
 Note that redis doesn't keep entries for empty queues, so there is no way to
 tell if the passed in strings are the correct queue names. So double check.
 
-Obviously make sure the queue is processes more frequently than you run this
-script.
+Obviously make sure the queue is processes more frequently than you run this.
 
 ## License
 
