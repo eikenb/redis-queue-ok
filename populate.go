@@ -6,7 +6,7 @@ It currently just uses json blobs hardcoded below.
 package main
 
 import (
-	"tideland-rdc.googlecode.com/hg"
+	rdc "code.google.com/p/tcgl/redis"
 	"fmt"
 	"flag"
 )

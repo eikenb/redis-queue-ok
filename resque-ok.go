@@ -1,10 +1,11 @@
 package main
 
 import (
-	"tideland-rdc.googlecode.com/hg"
+	rdc "code.google.com/p/tcgl/redis"
 	"fmt"
 	"flag"
 	"os"
+	"io"
 	"bufio"
 )
 
@@ -47,6 +48,10 @@ func argsAsQueues() []string {
 	for i := 0; i < flag.NArg(); i++ {
 		queues = append(queues, *namespace+":queue:"+flag.Arg(i))
 	}
+	if len(queues) == 0 {
+		flag.Usage()
+		os.Exit(1)
+	}
 	return queues
 }
 
@@ -61,9 +66,10 @@ func setUsage() {
 // return top json blob from redis queue
 func fromRedis(q string) (s string) {
 	rd := rdc.NewRedisDatabase(rdc.Configuration{})
-	switch l := rd.Command("llen", q).ValueAsInt(); {
+	switch l, _ := rd.Command("llen", q).ValueAsInt(); {
 	case l > 0:
 		rsb := rd.Command("lindex", q, 0)
+		// XXX missing error check here
 		s = rsb.Value().String()
 	}
 	return
@@ -78,7 +84,7 @@ func fromDisk(q string) (str string) {
 		defer file.Close()
 		reader := bufio.NewReader(file)
 		str, err = reader.ReadString('\n')
-		if err != nil && err != os.EOF {
+		if err != nil && err != io.EOF {
 			fmt.Println("ERROR: fromDisk;", err)
 			os.Exit(3)
 		}
@@ -87,7 +93,7 @@ func fromDisk(q string) (str string) {
 }
 
 // store json blob from top of queue to disk for next run
-func toDisk(q string, j string) (err os.Error) {
+func toDisk(q string, j string) (err error) {
 	path := fmt.Sprintf(dataPath, q)
 	linkCheck(path)
 	file, err := os.Create(path)
@@ -101,7 +107,7 @@ func toDisk(q string, j string) (err os.Error) {
 // Exits with error if path is sym-link
 func linkCheck(path string) {
 	finfo, err := os.Lstat(path)
-	if err == nil && finfo.IsSymlink() {
+	if err == nil && finfo.Mode() & os.ModeSymlink == os.ModeSymlink {
 		fmt.Println("ERROR: Data file is sym-link;", path)
 		os.Exit(3)
 	}
