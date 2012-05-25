@@ -1,9 +1,9 @@
 Package: resque-ok
-Version: 0.2-1
+Version: 0.3-1
 Section: net
 Priority: optional
 Architecture: all
 Depends: redis-server
 Maintainer: John Eikenberry <jae@zhar.net>
-Description: Plugin to monitor a resque queue. Should work with nagios, sensu
-	and hopefully others.
+Description: Program to monitor resque queues and/or work as a plugin for
+	nagios, sensu and possibly others.
