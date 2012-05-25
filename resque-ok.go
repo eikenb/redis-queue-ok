@@ -2,19 +2,26 @@ package main
 
 import (
 	rdc "code.google.com/p/tcgl/redis"
+	"code.google.com/p/tcgl/applog"
 	"fmt"
 	"flag"
 	"os"
 	"io"
 	"bufio"
+	"text/template"
+	"net/smtp"
+	"strings"
 )
 
+var server, from, to string
+var enable_email bool
 const dataPath = "/var/tmp/%v.txt"
 
 func main() {
-	setUsage()
-	queues := argsAsQueues()
+	setup()
+	queues := getQueues()
 	errs := make([]string, 0, len(queues))
+	errs = append(errs, "Queue(s) not being processed: ")
 
 	for _, q := range queues {
 		disk_entry := fromDisk(q)
@@ -23,44 +30,48 @@ func main() {
 		// fmt.Println("fromRedis:", redis_entry)
 		if disk_entry != redis_entry {
 			if err := toDisk(q, redis_entry); err != nil {
-				fmt.Println("ERROR:", err)
-				os.Exit(3)
+				exit(3, "ERROR:", err.Error())
 			}
 		} else if redis_entry != `` {
 			errs = append(errs, q)
 		}
 	}
-	if len(errs) > 0 {
-		fmt.Println("Queue(s) not being processed:", errs)
-		os.Exit(2)
+	if len(errs) > 1 {
+		exit(2, errs...)
 	} else {
-		fmt.Println("Queue(s) OK:", queues)
+		exit(0)
 	}
 }
 
-// process arguments as queue names
-func argsAsQueues() []string {
-	// namespace of default 'resque:queue:' is 'resque', resque adds the 'queue'
-	// bit automatically in addition to namespace.
-	var namespace = flag.String("ns", "resque", "reqsue namespace")
-	flag.Parse()
-	queues := make([]string, 0, flag.NArg())
-	for i := 0; i < flag.NArg(); i++ {
-		queues = append(queues, *namespace+":queue:"+flag.Arg(i))
+func getQueues() (qs []string) {
+	rd := rdc.NewRedisDatabase(rdc.Configuration{})
+	// resque* to optionally support custom namespaces
+	for _, v := range rd.Command("keys", "resque*:queue:*").Values() {
+		qs = append(qs, v.String())
 	}
-	if len(queues) == 0 {
-		flag.Usage()
-		os.Exit(1)
-	}
-	return queues
+	return
 }
 
-// --help output
-func setUsage() {
+func setup() {
+	flag.BoolVar(&enable_email, "e", false, "enable email message")
+	flag.StringVar(&server, "s", "localhost:25", "smtp server")
+	flag.StringVar(&from, "f", "", "From: address")
+	flag.StringVar(&to, "t", "", "To: address")
+
 	flag.Usage = func() {
-		fmt.Println("Usage:", os.Args[0], "[options] QUEUE [...]")
+		fmt.Println("Usage: [options]", os.Args[0])
+		fmt.Println("Options (for optional email message):")
 		flag.PrintDefaults()
+		fmt.Println("Returns:")
+		fmt.Println("\t0 on success")
+		fmt.Println("\t1 not used")
+		fmt.Println("\t2 when queue is not being processed")
+		fmt.Println("\t3 when there is an error with the check")
 	}
+	flag.Parse()
+	// redis library can be chatty, shut it up
+	devnull, _ := os.OpenFile(os.DevNull, os.O_WRONLY, 0)
+	applog.SetLogger(applog.NewStandardLogger(devnull))
 }
 
 // return top json blob from redis queue
@@ -85,8 +96,7 @@ func fromDisk(q string) (str string) {
 		reader := bufio.NewReader(file)
 		str, err = reader.ReadString('\n')
 		if err != nil && err != io.EOF {
-			fmt.Println("ERROR: fromDisk;", err)
-			os.Exit(3)
+			exit(3, "ERROR: fromDisk;", err.Error())
 		}
 	}
 	return
@@ -108,7 +118,48 @@ func toDisk(q string, j string) (err error) {
 func linkCheck(path string) {
 	finfo, err := os.Lstat(path)
 	if err == nil && finfo.Mode() & os.ModeSymlink == os.ModeSymlink {
-		fmt.Println("ERROR: Data file is sym-link;", path)
-		os.Exit(3)
+		exit(3, "ERROR: Data file is sym-link;", path)
 	}
 }
+
+// exit/sendmail
+func exit(n int, msgs ...string) {
+	output := strings.Join(msgs, "")
+	switch {
+	case enable_email && n > 0:
+		err := sendmail(output)
+		if err != nil {
+			fmt.Println(err)
+		}
+	case ! enable_email && len(output) > 0:
+		fmt.Println(output)
+	}
+	os.Exit(n)
+}
+
+// email
+var message string = `From: {{.From}}
+To: {{.To}}
+Subject: {{.Msg}}
+
+{{.Msg}}
+`
+
+type md struct {
+	From, To, Msg string
+}
+
+func sendmail(msg string) (err error) {
+	c, err := smtp.Dial(server)
+	if err != nil { return }
+	c.Mail(from)
+	c.Rcpt(to)
+	wc, err := c.Data()
+	if err != nil { return }
+	defer wc.Close()
+	mail, err := template.New("mail").Parse(message)
+	if err != nil { return }
+	err = mail.Execute(wc, &md{From: from, To: to, Msg: msg})
+	return
+}
+
