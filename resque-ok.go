@@ -21,7 +21,7 @@ func main() {
 	setup()
 	queues := getQueues()
 	errs := make([]string, 0, len(queues))
-	errs = append(errs, "Queue(s) not being processed: ")
+	errs = append(errs, "Queue(s) not being processed:")
 
 	for _, q := range queues {
 		disk_entry := fromDisk(q)
@@ -124,7 +124,7 @@ func linkCheck(path string) {
 
 // exit/sendmail
 func exit(n int, msgs ...string) {
-	output := strings.Join(msgs, "")
+	output := strings.Join(msgs, " ")
 	switch {
 	case enable_email && n > 0:
 		err := sendmail(output)

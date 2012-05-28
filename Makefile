@@ -21,12 +21,12 @@ deb: all
 	mkdir -p ./debian/usr/bin
 	cp resque-ok ./debian/usr/bin/
 	dpkg-deb --build debian
-	mv debian.deb resque-ok-0.3-1.deb
+	mv debian.deb resque-ok-0.3-3.deb
 
 clean-deb:
 	rm -f ./debian/usr/bin/resque-ok
 	test ! -d ./debian/usr/bin || { cd ./debian; rmdir -p usr/bin; }
-	rm -f resque-ok-0.3-1.deb
+	rm -f resque-ok-0.3-3.deb
 
 clean: clean-deb
 	rm -f resque-ok populate
