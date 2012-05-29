@@ -5,5 +5,5 @@ Priority: optional
 Architecture: all
 Depends: redis-server
 Maintainer: John Eikenberry <jae@zhar.net>
-Description: Program to monitor resque queues and/or work as a plugin for
-	nagios, sensu and possibly others.
+Description: Program to monitor resque queues via email notifications
+    and/or work as a plugin for nagios, sensu and possibly others.

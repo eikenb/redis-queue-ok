@@ -1,26 +1,32 @@
 # Usage
 
-For use with nagios, sensu or some other monitoring software that supports
-external programs.
+Intended to be used to monitor resque [https://github.com/defunkt/resque]
+queues. It supports standalone (cron/monit) mode where it sends emails on alert
+or it can work as a plugin for nagios, sensu and possibly other monitoring
+software that supports external programs.
 
-	$ resque-ok -h
-	Usage: resque-ok [options] QUEUE [...]
-	  -ns="resque": reqsue namespace
+    $ resque-ok -h
+    Usage: [options] resque-ok
+    Options (for optional email message):
+      -e=false: enable email message
+      -f="": From: address
+      -s="localhost:25": smtp server
+      -t="": To: address
+    Returns:
+        0 on success
+        1 not used
+        2 when queue is not being processed
+        3 when there is an error with the check
 
-Call passing one or more resque queue names as arguments. It also takes an
-optional namespace argument that should coincide with your
-Resque.redis.namespace setting.
+## How it works
 
-## Comment
+It looks for any redis keys that follow the pattern of a resque queue and
+monitors their first entry (resque uses rpush/lpop). If it doesn't change
+between 2 calls an alert is issued (email sent/return code 2).
 
-It compares the top of the queue against a saved value and if they are the same
-then the queue isn't getting processes. If the queue is empty or the value from
-the queue is different than the saved value, all is ok.
-
-Note that redis doesn't keep entries for empty queues, so there is no way to
-tell if the passed in strings are the correct queue names. So double check.
-
-Obviously make sure the queue is processes more frequently than you run this.
+If the queue is empty or the value from the queue is different than the saved
+value, all is ok. Make sure the queue is processes more frequently than you run
+this.
 
 ## License
 
