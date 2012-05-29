@@ -11,9 +11,6 @@ all: resque-ok strip
 resque-ok: resque-ok.go
 	env GOARCH=386 go build resque-ok.go
 
-pop: populate.go
-	go build populate.go
-
 strip:
 	strip resque-ok
 
@@ -29,6 +26,6 @@ clean-deb:
 	rm -f resque-ok-0.3-4.deb
 
 clean: clean-deb
-	rm -f resque-ok populate
+	rm -f resque-ok
 
 
