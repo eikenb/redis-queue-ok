@@ -139,13 +139,13 @@ func exit(n int, msgs ...string) {
 // email
 var message string = `From: {{.From}}
 To: {{.To}}
-Subject: {{.Msg}}
+Subject: ({{.Host}}) {{.Msg}}
 
-{{.Msg}}
+Hostname: {{.Host}}
+Error: {{.Msg}}
 `
-
 type md struct {
-	From, To, Msg string
+	From, To, Host, Msg string
 }
 
 func sendmail(msg string) (err error) {
@@ -158,7 +158,8 @@ func sendmail(msg string) (err error) {
 	defer wc.Close()
 	mail, err := template.New("mail").Parse(message)
 	if err != nil { return }
-	err = mail.Execute(wc, &md{From: from, To: to, Msg: msg})
+	hostname, _ := os.Hostname()
+	err = mail.Execute(wc, &md{From: from, To: to, Host: hostname, Msg: msg})
 	return
 }
 
