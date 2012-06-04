@@ -6,6 +6,9 @@ ifndef GOARCH
 GOARCH := 386
 endif
 
+# change in ./debian/DEBIAN/control as well
+VERSION := "0.4-1"
+
 all: resque-ok strip
 
 resque-ok: resque-ok.go
@@ -18,12 +21,12 @@ deb: all
 	mkdir -p ./debian/usr/bin
 	cp resque-ok ./debian/usr/bin/
 	dpkg-deb --build debian
-	mv debian.deb resque-ok-0.3-4.deb
+	mv debian.deb resque-ok-${VERSION}.deb
 
 clean-deb:
 	rm -f ./debian/usr/bin/resque-ok
 	test ! -d ./debian/usr/bin || { cd ./debian; rmdir -p usr/bin; }
-	rm -f resque-ok-0.3-4.deb
+	rm -f resque-ok-${VERSION}.deb
 
 clean: clean-deb
 	rm -f resque-ok

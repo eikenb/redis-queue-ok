@@ -1,5 +1,5 @@
 Package: resque-ok
-Version: 0.3-4
+Version: 0.4-1
 Section: net
 Priority: optional
 Architecture: all
