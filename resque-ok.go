@@ -80,7 +80,6 @@ func fromRedis(q string) (s string) {
 	switch l, _ := rd.Command("llen", q).ValueAsInt(); {
 	case l > 0:
 		rsb := rd.Command("lindex", q, 0)
-		// XXX missing error check here
 		s = rsb.Value().String()
 	}
 	return
