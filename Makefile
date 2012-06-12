@@ -7,28 +7,29 @@ GOARCH := 386
 endif
 
 # change in ./debian/DEBIAN/control as well
-VERSION := "0.4-1"
+VERSION := 1.0-1
 
-all: resque-ok strip
+all: queue-ok strip
 
-resque-ok: resque-ok.go
-	env GOARCH=386 go build resque-ok.go
+queue-ok: queue-ok.go
+	env GOARCH=386 go build queue-ok.go
 
 strip:
-	strip resque-ok
+	strip queue-ok
 
 deb: all
+	sed -i -e 's/^Version: .*$$/Version: ${VERSION}/' ./debian/DEBIAN/control
 	mkdir -p ./debian/usr/bin
-	cp resque-ok ./debian/usr/bin/
+	cp queue-ok ./debian/usr/bin/
 	dpkg-deb --build debian
-	mv debian.deb resque-ok-${VERSION}.deb
+	mv debian.deb queue-ok-${VERSION}.deb
 
 clean-deb:
-	rm -f ./debian/usr/bin/resque-ok
+	rm -f ./debian/usr/bin/queue-ok
 	test ! -d ./debian/usr/bin || { cd ./debian; rmdir -p usr/bin; }
-	rm -f resque-ok-${VERSION}.deb
+	rm -f queue-ok-*.deb
 
 clean: clean-deb
-	rm -f resque-ok
+	rm -f queue-ok
 
 

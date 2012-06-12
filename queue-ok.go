@@ -13,8 +13,8 @@ import (
 	"strings"
 )
 
-var server, from, to string
-var enable_email bool
+var server, from, to, pattern string
+var enable_email, leftpush, rightpush bool
 const dataPath = "/var/tmp/%v.txt"
 
 func main() {
@@ -46,17 +46,22 @@ func main() {
 func getQueues() (qs []string) {
 	rd := rdc.NewRedisDatabase(rdc.Configuration{})
 	// resque* to optionally support custom namespaces
-	for _, v := range rd.Command("keys", "resque*:queue:*").Values() {
+	for _, v := range rd.Command("keys", pattern).Values() {
 		qs = append(qs, v.String())
 	}
 	return
 }
 
 func setup() {
+	// email flags
 	flag.BoolVar(&enable_email, "e", false, "enable email message")
 	flag.StringVar(&server, "s", "localhost:25", "smtp server")
 	flag.StringVar(&from, "f", "", "From: address")
 	flag.StringVar(&to, "t", "", "To: address")
+	// queue flags
+	flag.StringVar(&pattern, "p", "resque*:queue:*", "queue key pattern")
+	flag.BoolVar(&leftpush, "l", false, "left push (test index -1)")
+	flag.BoolVar(&rightpush, "r", true, "right push (test index 0)")
 
 	flag.Usage = func() {
 		fmt.Println("Usage: [options]", os.Args[0])
@@ -69,6 +74,9 @@ func setup() {
 		fmt.Println("\t3 when there is an error with the check")
 	}
 	flag.Parse()
+	if rightpush { leftpush = false }
+	if leftpush { rightpush = false }
+
 	// redis library can be chatty, shut it up
 	devnull, _ := os.OpenFile(os.DevNull, os.O_WRONLY, 0)
 	applog.SetLogger(applog.NewStandardLogger(devnull))
@@ -77,10 +85,11 @@ func setup() {
 // return top json blob from redis queue
 func fromRedis(q string) (s string) {
 	rd := rdc.NewRedisDatabase(rdc.Configuration{})
-	switch l, _ := rd.Command("llen", q).ValueAsInt(); {
-	case l > 0:
-		rsb := rd.Command("lindex", q, 0)
-		s = rsb.Value().String()
+	switch rightpush {
+	case true:  // rightpush
+		s = rd.Command("lindex", q, 0).Value().String()
+	case false: // leftpush
+		s = rd.Command("lindex", q, -1).Value().String()
 	}
 	return
 }
