@@ -7,17 +7,20 @@ sends emails on alert or it can work as a plugin for nagios, sensu and possibly
 other monitoring software that supports external programs.
 
     $ queue-ok -h
-    Usage: [options] queue-ok
+    Usage: [options] ./queue-ok
     Options (for optional email message):
       -e=false: enable email message
       -f="": From: address
+      -l=false: left push (test index -1)
+      -p="resque*:queue:*": queue key pattern
+      -r=true: right push (test index 0)
       -s="localhost:25": smtp server
       -t="": To: address
     Returns:
-        0 on success
-        1 not used
-        2 when queue is not being processed
-        3 when there is an error with the check
+    0 on success
+    1 not used
+    2 when queue issued not being processed
+    3 when there is an error with the check
 
 ## How it works
 
