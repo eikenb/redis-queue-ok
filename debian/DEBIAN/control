@@ -2,7 +2,7 @@ Package: queue-ok
 Version: 1.0-1
 Section: net
 Priority: optional
-Architecture: all
+Architecture: XXX
 Depends: redis-server
 Maintainer: John Eikenberry <jae@zhar.net>
 Description: Program to monitor redis queues via email notifications

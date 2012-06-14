@@ -6,23 +6,30 @@ ifndef GOARCH
 GOARCH := 386
 endif
 
+DEBARCH := amd64
+ifeq ($(GOARCH), 386)
+	DEBARCH := i386
+endif
+
 # change in ./debian/DEBIAN/control as well
 VERSION := 1.0-1
 
 all: queue-ok strip
 
 queue-ok: queue-ok.go
-	env GOARCH=386 go build queue-ok.go
+	env GOARCH=${GOARCH} go build queue-ok.go
 
 strip:
 	strip queue-ok
 
 deb: all
 	sed -i -e 's/^Version: .*$$/Version: ${VERSION}/' ./debian/DEBIAN/control
+	sed -i -e 's/^Architecture: .*$$/Architecture: ${DEBARCH}/' ./debian/DEBIAN/control
 	mkdir -p ./debian/usr/bin
 	cp queue-ok ./debian/usr/bin/
 	dpkg-deb --build debian
-	mv debian.deb queue-ok-${VERSION}.deb
+	mv debian.deb queue-ok-${VERSION}_${DEBARCH}.deb
+	sed -i -e 's/^Architecture: .*$$/Architecture: XXX/' ./debian/DEBIAN/control
 
 clean-deb:
 	rm -f ./debian/usr/bin/queue-ok
