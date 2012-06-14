@@ -12,7 +12,7 @@ ifeq ($(GOARCH), 386)
 endif
 
 # change in ./debian/DEBIAN/control as well
-VERSION := 1.0-1
+VERSION := 1.1-1
 
 all: queue-ok strip
 
