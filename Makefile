@@ -22,6 +22,12 @@ queue-ok: queue-ok.go
 strip:
 	strip queue-ok
 
+deb-386:
+	GOARCH=386 make deb
+
+deb-amd64:
+	GOARCH=amd64 make deb
+
 deb: all
 	sed -i -e 's/^Version: .*$$/Version: ${VERSION}/' ./debian/DEBIAN/control
 	sed -i -e 's/^Architecture: .*$$/Architecture: ${DEBARCH}/' ./debian/DEBIAN/control
