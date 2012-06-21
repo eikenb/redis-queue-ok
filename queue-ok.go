@@ -11,11 +11,13 @@ import (
 	"text/template"
 	"net/smtp"
 	"strings"
+	"path/filepath"
 )
 
 var server, from, to, pattern string
 var enable_email, leftpush, rightpush bool
 const dataPath = "/var/tmp/%v.txt"
+const dataDir = "/var/tmp/"
 
 func main() {
 	setup()
@@ -44,10 +46,27 @@ func main() {
 }
 
 func getQueues() (qs []string) {
+	set := map[string]bool{}
 	rd := rdc.NewRedisDatabase(rdc.Configuration{})
 	// resque* to optionally support custom namespaces
 	for _, v := range rd.Command("keys", pattern).Values() {
-		qs = append(qs, v.String())
+		set[v.String()]=true
+	}
+	// this will pull old queues that have files left
+	filepath.Walk(dataDir, func(p string, fi os.FileInfo, e error) error {
+		if ! fi.IsDir() && fi.Mode() & os.ModeSymlink != os.ModeSymlink {
+			p = filepath.Base(p)
+			if match, _ := filepath.Match(pattern, p); match {
+				e := filepath.Ext(p)
+				p = strings.Replace(p, e, "", 1) // remove extension
+				// fmt.Println(p, "match")
+				set[p]=true
+			}
+		}
+		return e
+	})
+	for k, _ := range set {
+		qs = append(qs, k)
 	}
 	return
 }
@@ -111,13 +130,17 @@ func fromDisk(q string) (str string) {
 }
 
 // store json blob from top of queue to disk for next run
-func toDisk(q string, j string) (err error) {
+func toDisk(q string, data string) (err error) {
 	path := fmt.Sprintf(dataPath, q)
 	linkCheck(path)
-	file, err := os.Create(path)
-	if err == nil {
-		defer file.Close()
-		file.WriteString(j)
+	if data == "" && exists(path) {
+		os.Remove(path)
+	} else {
+		file, err := os.Create(path)
+		if err == nil {
+			defer file.Close()
+			file.WriteString(data)
+		}
 	}
 	return
 }
@@ -128,6 +151,13 @@ func linkCheck(path string) {
 	if err == nil && finfo.Mode() & os.ModeSymlink == os.ModeSymlink {
 		exit(3, "ERROR: Data file is sym-link;", path)
 	}
+}
+
+func exists(path string) bool {
+    _, err := os.Stat(path)
+    if err == nil { return true }
+    if os.IsNotExist(err) { return false }
+    return false
 }
 
 // exit/sendmail
