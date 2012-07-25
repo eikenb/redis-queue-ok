@@ -47,7 +47,7 @@ func main() {
 
 func getQueues() (qs []string) {
 	set := map[string]bool{}
-	rd := rdc.NewRedisDatabase(rdc.Configuration{})
+	rd := rdc.Connect(rdc.Configuration{})
 	// resque* to optionally support custom namespaces
 	for _, v := range rd.Command("keys", pattern).Values() {
 		set[v.String()]=true
@@ -103,7 +103,7 @@ func setup() {
 
 // return top json blob from redis queue
 func fromRedis(q string) (s string) {
-	rd := rdc.NewRedisDatabase(rdc.Configuration{})
+	rd := rdc.Connect(rdc.Configuration{})
 	switch rightpush {
 	case true:  // rightpush
 		s = rd.Command("lindex", q, 0).Value().String()
