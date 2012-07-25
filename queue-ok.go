@@ -185,7 +185,7 @@ Error: {{.Msg}}
 
 To verify run queue-ok on ${{.Host}}.
 
-	ssh {{.Host} queue-ok
+	ssh {{.Host}} queue-ok
 `
 type md struct {
 	From, To, Host, Msg string
