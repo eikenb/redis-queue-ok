@@ -1,21 +1,22 @@
 package main
 
 import (
-	rdc "code.google.com/p/tcgl/redis"
-	"code.google.com/p/tcgl/applog"
-	"fmt"
-	"flag"
-	"os"
-	"io"
 	"bufio"
-	"text/template"
+	"code.google.com/p/tcgl/applog"
+	rdc "code.google.com/p/tcgl/redis"
+	"flag"
+	"fmt"
+	"io"
 	"net/smtp"
-	"strings"
+	"os"
 	"path/filepath"
+	"strings"
+	"text/template"
 )
 
 var server, from, to, pattern string
 var enable_email, leftpush, rightpush bool
+
 const dataPath = "/var/tmp/%v.txt"
 const dataDir = "/var/tmp/"
 
@@ -50,17 +51,17 @@ func getQueues() (qs []string) {
 	rd := rdc.Connect(rdc.Configuration{})
 	// resque* to optionally support custom namespaces
 	for _, v := range rd.Command("keys", pattern).Values() {
-		set[v.String()]=true
+		set[v.String()] = true
 	}
 	// this will pull old queues that have files left
 	filepath.Walk(dataDir, func(p string, fi os.FileInfo, e error) error {
-		if ! fi.IsDir() && fi.Mode() & os.ModeSymlink != os.ModeSymlink {
+		if !fi.IsDir() && fi.Mode()&os.ModeSymlink != os.ModeSymlink {
 			p = filepath.Base(p)
 			if match, _ := filepath.Match(pattern, p); match {
 				e := filepath.Ext(p)
 				p = strings.Replace(p, e, "", 1) // remove extension
 				// fmt.Println(p, "match")
-				set[p]=true
+				set[p] = true
 			}
 		}
 		return e
@@ -93,8 +94,12 @@ func setup() {
 		fmt.Println("\t3 when there is an error with the check")
 	}
 	flag.Parse()
-	if rightpush { leftpush = false }
-	if leftpush { rightpush = false }
+	if rightpush {
+		leftpush = false
+	}
+	if leftpush {
+		rightpush = false
+	}
 
 	// redis library can be chatty, shut it up
 	devnull, _ := os.OpenFile(os.DevNull, os.O_WRONLY, 0)
@@ -105,7 +110,7 @@ func setup() {
 func fromRedis(q string) (s string) {
 	rd := rdc.Connect(rdc.Configuration{})
 	switch rightpush {
-	case true:  // rightpush
+	case true: // rightpush
 		s = rd.Command("lindex", q, 0).Value().String()
 	case false: // leftpush
 		s = rd.Command("lindex", q, -1).Value().String()
@@ -148,16 +153,20 @@ func toDisk(q string, data string) (err error) {
 // Exits with error if path is sym-link
 func linkCheck(path string) {
 	finfo, err := os.Lstat(path)
-	if err == nil && finfo.Mode() & os.ModeSymlink == os.ModeSymlink {
+	if err == nil && finfo.Mode()&os.ModeSymlink == os.ModeSymlink {
 		exit(3, "ERROR: Data file is sym-link;", path)
 	}
 }
 
 func exists(path string) bool {
-    _, err := os.Stat(path)
-    if err == nil { return true }
-    if os.IsNotExist(err) { return false }
-    return false
+	_, err := os.Stat(path)
+	if err == nil {
+		return true
+	}
+	if os.IsNotExist(err) {
+		return false
+	}
+	return false
 }
 
 // exit/sendmail
@@ -169,7 +178,7 @@ func exit(n int, msgs ...string) {
 		if err != nil {
 			fmt.Println(err)
 		}
-	case ! enable_email && len(output) > 0:
+	case !enable_email && len(output) > 0:
 		fmt.Println(output)
 	}
 	os.Exit(n)
@@ -187,22 +196,28 @@ To verify run queue-ok on ${{.Host}}.
 
 	ssh {{.Host}} queue-ok
 `
+
 type md struct {
 	From, To, Host, Msg string
 }
 
 func sendmail(msg string) (err error) {
 	c, err := smtp.Dial(server)
-	if err != nil { return }
+	if err != nil {
+		return
+	}
 	c.Mail(from)
 	c.Rcpt(to)
 	wc, err := c.Data()
-	if err != nil { return }
+	if err != nil {
+		return
+	}
 	defer wc.Close()
 	mail, err := template.New("mail").Parse(message)
-	if err != nil { return }
+	if err != nil {
+		return
+	}
 	hostname, _ := os.Hostname()
 	err = mail.Execute(wc, &md{From: from, To: to, Host: hostname, Msg: msg})
 	return
 }
-
